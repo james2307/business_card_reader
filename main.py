@@ -2,7 +2,6 @@ import streamlit as st
 from PIL import Image
 import pandas as pd
 from utils.vision_parser import extract_card_info
-from utils.database import save_card_info, get_all_cards
 from streamlit_cropper import st_cropper
 import io
 import json
@@ -183,31 +182,12 @@ if uploaded_files:
                     # Read and store the image
                     image = Image.open(uploaded_file)
 
-                    # Extract information using original image
+                    # Extract information
                     info = extract_card_info(image)
-
-                    try:
-                        # Save to database
-                        card_id = save_card_info(
-                            filename=uploaded_file.name,
-                            company_name=info.get('company_name'),
-                            details=info,
-                            image_path=""  # TODO: Add S3 path once implemented
-                        )
-
-                        # Add filename and original image to info
-                        info['filename'] = uploaded_file.name
-                        info['original_image'] = image
-                        info['card_id'] = card_id
-                        info['display_image'] = image  # Added for display
-                        st.session_state.processed_cards.append(info)
-                    except Exception as db_error:
-                        st.error(f"Failed to save to database: {str(db_error)}")
-                        # Continue displaying the results even if database save fails
-                        info['filename'] = uploaded_file.name
-                        info['original_image'] = image
-                        info['display_image'] = image
-                        st.session_state.processed_cards.append(info)
+                    # Add filename and original image to info
+                    info['filename'] = uploaded_file.name
+                    info['original_image'] = image
+                    st.session_state.processed_cards.append(info)
 
     except Exception as e:
         st.error(f"An error occurred while processing the image: {str(e)}")
@@ -252,5 +232,5 @@ if st.session_state.processed_cards:
 # Add footer
 st.markdown("""
 ---
-Made with ❤️ using Streamlit and GPT-4 Vision
+Made with ❤️
 """)
