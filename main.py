@@ -14,6 +14,37 @@ st.set_page_config(
     layout="wide"
 )
 
+# Add custom CSS
+st.markdown("""
+    <style>
+        .editor-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .editor-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1001;
+            width: 80%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Create placeholder at top of app
+editor_placeholder = st.empty()
+
 # Title and description
 st.title("📇 Business Card Scanner")
 st.markdown("""
@@ -167,42 +198,33 @@ if modal.is_open():
 # Handle image editing if active
 if st.session_state.editing_image is not None:
     idx = st.session_state.editing_image
-    if idx < len(st.session_state.processed_cards):
-        st.markdown("### 🖼️ Edit Image Display")
-        card = st.session_state.processed_cards[idx]
-        img = card['original_image']
-
-        # Create columns for edit controls
-        edit_cols = st.columns([3, 1])
-
-        # Image cropping
-        with edit_cols[0]:
+    with editor_placeholder.container():
+        st.markdown('<div class="editor-overlay">', unsafe_allow_html=True)
+        with st.container():
+            st.markdown('<div class="editor-container">', unsafe_allow_html=True)
+            st.markdown("### 🖼️ Edit Image")
+            
+            # Cropping interface
             cropped_img = st_cropper(
-                img,
+                st.session_state.processed_cards[idx]['original_image'],
                 realtime_update=True,
-                box_color='#2196F3',
-                aspect_ratio=None,
-                return_type='image'
+                box_color="red",
+                aspect_ratio=None
             )
-
-        # Controls
-        with edit_cols[1]:
-            # Rotation control
-            rotation = st.selectbox(
-                "Rotate",
-                [0, 90, 180, 270],
-                key=f"rotate_{idx}"
-            )
-            if rotation:
-                cropped_img = cropped_img.rotate(rotation, expand=True)
-
-            # Save/Cancel buttons
-            if st.button("✅ Save Changes", key=f"save_edit_{idx}"):
-                save_edited_image(idx, cropped_img)
-
-            if st.button("❌ Cancel", key=f"cancel_edit_{idx}"):
-                st.session_state.editing_image = None
-                st.rerun()
+            
+            col1, col2 = st.columns([1,4])
+            with col1:
+                if st.button("Save"):
+                    st.session_state.processed_cards[idx]["processed_image"] = cropped_img
+                    st.session_state.editing_image = None
+                    st.rerun()
+            with col2:
+                if st.button("Cancel"):
+                    st.session_state.editing_image = None
+                    st.rerun()
+                    
+            st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # File uploader
 uploaded_files = st.file_uploader(
