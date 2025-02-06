@@ -5,6 +5,7 @@ from utils.vision_parser import extract_card_info
 from streamlit_cropper import st_cropper
 import io
 import json
+from streamlit_modal import Modal
 
 # Page configuration
 st.set_page_config(
@@ -123,6 +124,45 @@ def display_card_info(info, idx):
             cols[2].write(f"**State:** {addr.get('state') or 'Not found'}")
             cols[3].write(f"**Country:** {addr.get('country') or 'Not found'}")
             cols[4].write(f"**Pincode:** {addr.get('pincode') or 'Not found'}")
+
+# Initialize modal
+modal = Modal("Edit Image", key="edit_modal")
+
+# Process cards section
+for idx, card in enumerate(st.session_state.processed_cards):
+    with st.container():
+        col1, col2, col3 = st.columns([2, 2, 1])
+        
+        with col1:
+            st.image(card["original_image"], caption="Original Image")
+        
+        with col2:
+            st.image(card["processed_image"], caption="Processed Image")
+        
+        with col3:
+            if st.button("Edit Image", key=f"edit_btn_{idx}"):
+                st.session_state.editing_image = idx
+                modal.open()  # Open modal when edit button clicked
+
+# Handle modal content
+if modal.is_open():
+    idx = st.session_state.editing_image
+    if idx is not None:
+        card = st.session_state.processed_cards[idx]
+        
+        # Image cropper in modal
+        cropped_img = st_cropper(
+            Image.open(BytesIO(card["original_image"])),
+            realtime_update=True,
+            box_color="red",
+            aspect_ratio=None
+        )
+        
+        # Save button in modal
+        if st.button("Save Changes"):
+            st.session_state.processed_cards[idx]["processed_image"] = cropped_img
+            modal.close()
+            st.rerun()
 
 # Handle image editing if active
 if st.session_state.editing_image is not None:
