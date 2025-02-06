@@ -10,5 +10,5 @@ dependencies = [
     "pillow>=11.1.0",
     "streamlit-cropper>=0.2.2",
     "streamlit>=1.42.0",
-    "streamlit-modal">=0.1.0,
+    "streamlit-modal>=0.1.0",
 ]
