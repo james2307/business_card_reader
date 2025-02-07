@@ -10,11 +10,5 @@ dependencies = [
     "pillow>=11.1.0",
     "streamlit-cropper>=0.2.2",
     "streamlit>=1.42.0",
-    "streamlit-modal>=0.1.2",
-    "python-dotenv==1.0.0",
-    "botocore>=1.36.14",
-    "numpy>=2.2.2",
-    "openai>=1.61.1",
-    "opencv-python>=4.11.0.86",
-    "opencv-python-headless>=4.11.0.86",
+    "trafilatura>=2.0.0",
 ]
