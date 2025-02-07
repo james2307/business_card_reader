@@ -5,7 +5,6 @@ from utils.vision_parser import extract_card_info
 from streamlit_cropper import st_cropper
 import io
 import json
-from streamlit_modal import Modal
 
 # Page configuration
 st.set_page_config(
@@ -13,37 +12,6 @@ st.set_page_config(
     page_icon="📇",
     layout="wide"
 )
-
-# Add custom CSS
-st.markdown("""
-    <style>
-        .editor-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-        .editor-container {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            z-index: 1001;
-            width: 80%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# Create placeholder at top of app
-editor_placeholder = st.empty()
 
 # Title and description
 st.title("📇 Business Card Scanner")
@@ -156,75 +124,45 @@ def display_card_info(info, idx):
             cols[3].write(f"**Country:** {addr.get('country') or 'Not found'}")
             cols[4].write(f"**Pincode:** {addr.get('pincode') or 'Not found'}")
 
-# Initialize modal
-modal = Modal("Edit Image", key="edit_modal")
-
-# Process cards section
-for idx, card in enumerate(st.session_state.processed_cards):
-    with st.container():
-        col1, col2, col3 = st.columns([2, 2, 1])
-        
-        with col1:
-            st.image(card["original_image"], caption="Original Image")
-        
-        with col2:
-            st.image(card["processed_image"], caption="Processed Image")
-        
-        with col3:
-            if st.button("Edit Image", key=f"edit_btn_{idx}"):
-                st.session_state.editing_image = idx
-                modal.open()  # Open modal when edit button clicked
-
-# Handle modal content
-if modal.is_open():
-    idx = st.session_state.editing_image
-    if idx is not None:
-        card = st.session_state.processed_cards[idx]
-        
-        # Image cropper in modal
-        cropped_img = st_cropper(
-            Image.open(BytesIO(card["original_image"])),
-            realtime_update=True,
-            box_color="red",
-            aspect_ratio=None
-        )
-        
-        # Save button in modal
-        if st.button("Save Changes"):
-            st.session_state.processed_cards[idx]["processed_image"] = cropped_img
-            modal.close()
-            st.rerun()
-
 # Handle image editing if active
 if st.session_state.editing_image is not None:
     idx = st.session_state.editing_image
-    with editor_placeholder.container():
-        st.markdown('<div class="editor-overlay">', unsafe_allow_html=True)
-        with st.container():
-            st.markdown('<div class="editor-container">', unsafe_allow_html=True)
-            st.markdown("### 🖼️ Edit Image")
-            
-            # Cropping interface
+    if idx < len(st.session_state.processed_cards):
+        st.markdown("### 🖼️ Edit Image Display")
+        card = st.session_state.processed_cards[idx]
+        img = card['original_image']
+
+        # Create columns for edit controls
+        edit_cols = st.columns([3, 1])
+
+        # Image cropping
+        with edit_cols[0]:
             cropped_img = st_cropper(
-                st.session_state.processed_cards[idx]['original_image'],
+                img,
                 realtime_update=True,
-                box_color="red",
-                aspect_ratio=None
+                box_color='#2196F3',
+                aspect_ratio=None,
+                return_type='image'
             )
-            
-            col1, col2 = st.columns([1,4])
-            with col1:
-                if st.button("Save"):
-                    st.session_state.processed_cards[idx]["processed_image"] = cropped_img
-                    st.session_state.editing_image = None
-                    st.rerun()
-            with col2:
-                if st.button("Cancel"):
-                    st.session_state.editing_image = None
-                    st.rerun()
-                    
-            st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Controls
+        with edit_cols[1]:
+            # Rotation control
+            rotation = st.selectbox(
+                "Rotate",
+                [0, 90, 180, 270],
+                key=f"rotate_{idx}"
+            )
+            if rotation:
+                cropped_img = cropped_img.rotate(rotation, expand=True)
+
+            # Save/Cancel buttons
+            if st.button("✅ Save Changes", key=f"save_edit_{idx}"):
+                save_edited_image(idx, cropped_img)
+
+            if st.button("❌ Cancel", key=f"cancel_edit_{idx}"):
+                st.session_state.editing_image = None
+                st.rerun()
 
 # File uploader
 uploaded_files = st.file_uploader(
