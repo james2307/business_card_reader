@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image
 import pandas as pd
-from utils.vision_parser import extract_card_info
+from vision_parser import extract_card_info
 from streamlit_cropper import st_cropper
 import io
 import json
@@ -201,20 +201,56 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
     try:
+        # Show progress bar
+        progress_text = "Processing business cards..."
+        total_files = len(uploaded_files)
+        progress_bar = st.progress(0, text=progress_text)
+
         # Process each file
         for idx, uploaded_file in enumerate(uploaded_files):
             # Check if this file was already processed
             if idx >= len(st.session_state.processed_cards):
-                with st.spinner(f"Analyzing business card {idx + 1}..."):
-                    # Read and store the image
-                    image = Image.open(uploaded_file)
+                # Update progress
+                progress = (idx + 1) / total_files
+                progress_bar.progress(progress, text=f"Processing card {idx + 1} of {total_files}...")
 
-                    # Extract information
-                    info = extract_card_info(image)
-                    # Add filename and original image to info
-                    info['filename'] = uploaded_file.name
-                    info['original_image'] = image
-                    st.session_state.processed_cards.append(info)
+                # Read and store the image
+                image = Image.open(uploaded_file)
+
+                # Extract information
+                info = extract_card_info(image)
+                # Add filename and original image to info
+                info['filename'] = uploaded_file.name
+                info['original_image'] = image
+                st.session_state.processed_cards.append(info)
+
+        # Complete progress bar
+        progress_bar.progress(1.0, text="Processing complete!")
+
+        # Show export options immediately after processing
+        if st.session_state.processed_cards:
+            st.subheader("💾 Export Options")
+
+            # Convert to DataFrame for export
+            export_data = []
+            for card in st.session_state.processed_cards:
+                # Create a copy without the image to avoid CSV export issues
+                card_data = card.copy()
+                card_data.pop('original_image', None)
+                card_data.pop('display_image', None)
+                export_data.append(card_data)
+
+            df = pd.DataFrame(export_data)
+
+            # CSV export button
+            csv = df.to_csv(index=False)
+            st.download_button(
+                label="Download CSV",
+                data=csv,
+                file_name="business_cards.csv",
+                mime="text/csv",
+                help="Download all extracted information as CSV"
+            )
 
     except Exception as e:
         st.error(f"An error occurred while processing the image: {str(e)}")
@@ -225,30 +261,6 @@ if st.session_state.processed_cards:
     # Display all processed cards
     for idx, info in enumerate(st.session_state.processed_cards):
         display_card_info(info, idx)
-
-    # Show export options
-    st.subheader("💾 Export Options")
-
-    # Convert to DataFrame for export
-    export_data = []
-    for card in st.session_state.processed_cards:
-        # Create a copy without the image to avoid CSV export issues
-        card_data = card.copy()
-        card_data.pop('original_image', None)
-        card_data.pop('display_image', None)
-        export_data.append(card_data)
-
-    df = pd.DataFrame(export_data)
-
-    # CSV export button
-    csv = df.to_csv(index=False)
-    st.download_button(
-        label="Download CSV",
-        data=csv,
-        file_name="business_cards.csv",
-        mime="text/csv",
-        help="Download all extracted information as CSV"
-    )
 
     # Clear results button
     if st.button("Clear All Results"):
