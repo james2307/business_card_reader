@@ -39,7 +39,7 @@ def upload_to_s3(image):
         url = s3_client.generate_presigned_url(
             'get_object',
             Params={'Bucket': BUCKET_NAME, 'Key': filename},
-            ExpiresIn=300  # 5 minutes
+            ExpiresIn=36000  # 10 hours
         )
 
         # Return both URL and filename for cleanup
