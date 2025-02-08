@@ -15,17 +15,22 @@ st.set_page_config(
 )
 
 def clear_all():
-    """Clear all session state and reset app"""
-    keys_to_clear = [
-        'processed_cards',
-        'editing_image',
-        'uploaded_files',
-        'file_uploader'  # Important: Include file uploader key
-    ]
-    for key in keys_to_clear:
-        if key in st.session_state:
-            del st.session_state[key]
-    st.rerun()
+    """Clear all session state and refresh page"""
+    # Clear all session state
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    # Force page refresh
+    st.experimental_rerun()
+
+# Replace existing Clear Results button section with:
+if st.session_state.processed_cards:
+    # Display all processed cards
+    for idx, info in enumerate(st.session_state.processed_cards):
+        display_card_info(info, idx)
+
+    # Clear results button - simplified
+    if st.button("Clear All Results"):
+        clear_all()
 
 # After page config, initialize all session states
 if 'processed_cards' not in st.session_state:
@@ -222,16 +227,17 @@ uploaded_files = st.file_uploader(
 )
 
 if uploaded_files:
+    # Track successful and failed cards
+    failed_cards = []
+    
     try:
-        # Show progress bar
         progress_text = "Processing business cards..."
         total_files = len(uploaded_files)
         progress_bar = st.progress(0, text=progress_text)
 
         # Process each file
         for idx, uploaded_file in enumerate(uploaded_files):
-            # Check if this file was already processed
-            if idx >= len(st.session_state.processed_cards):
+            try:
                 # Update progress
                 progress = (idx + 1) / total_files
                 progress_bar.progress(progress, text=f"Processing card {idx + 1} of {total_files}...")
@@ -241,13 +247,25 @@ if uploaded_files:
 
                 # Extract information
                 info = extract_card_info(image)
-                # Add filename and original image to info
                 info['filename'] = uploaded_file.name
                 info['original_image'] = image
                 st.session_state.processed_cards.append(info)
+                
+            except Exception as e:
+                failed_cards.append({
+                    'filename': uploaded_file.name,
+                    'error': str(e)
+                })
+                continue  # Skip to next card
 
         # Complete progress bar
         progress_bar.progress(1.0, text="Processing complete!")
+
+        # Show error summary if any
+        if failed_cards:
+            st.error(f"Failed to process {len(failed_cards)} cards:")
+            for card in failed_cards:
+                st.warning(f"- {card['filename']}: {card['error']}")
 
         # Show export options immediately after processing
         if st.session_state.processed_cards:
