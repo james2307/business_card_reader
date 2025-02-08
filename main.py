@@ -7,96 +7,20 @@ import io
 import json
 import hmac
 
-# Page configuration
+# 1. Page configuration
 st.set_page_config(
     page_title="Business Card Scanner",
     page_icon="📇",
     layout="wide"
 )
 
-def clear_all():
-    """Clear all session state and refresh page"""
-    # Clear all session state
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    # Force page refresh
-    st.experimental_rerun()
-
-# Replace existing Clear Results button section with:
-if st.session_state.processed_cards:
-    # Display all processed cards
-    for idx, info in enumerate(st.session_state.processed_cards):
-        display_card_info(info, idx)
-
-    # Clear results button - simplified
-    if st.button("Clear All Results"):
-        clear_all()
-
-# After page config, initialize all session states
-if 'processed_cards' not in st.session_state:
-    st.session_state.processed_cards = []
-if 'editing_image' not in st.session_state:
-    st.session_state.editing_image = None
-if 'uploaded_files' not in st.session_state:
-    st.session_state.uploaded_files = None
-
-def check_password():
-    """Returns `True` if the user had the correct password."""
-
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Don't store the password.
-        else:
-            st.session_state["password_correct"] = False
-
-    # Return True if the password is validated.
-    if st.session_state.get("password_correct", False):
-        return True
-
-    # Show input for password.
-    st.text_input(
-        "Password", type="password", on_change=password_entered, key="password"
-    )
-    if "password_correct" in st.session_state:
-        st.error("😕 Password incorrect")
-    return False
-
-if not check_password():
-    st.stop()  # Do not continue if check_password is not True.
-
-# Title and description
-st.title("📇 Business Card Scanner")
-st.markdown("""
-Upload one or multiple business card images to extract contact information automatically.
-Supported formats: PNG, JPG, JPEG
-""")
-
-# Initialize session state
-if 'processed_cards' not in st.session_state:
-    st.session_state.processed_cards = []
-if 'editing_image' not in st.session_state:
-    st.session_state.editing_image = None
-
+# 2. Helper functions
 def safe_get_value(item):
     """Safely extract value from either a string or a dictionary"""
     if isinstance(item, dict):
         return next(iter(item.values()), "Not found")
     return item if item else "Not found"
 
-def toggle_edit_mode(idx):
-    """Toggle edit mode for an image"""
-    if st.session_state.editing_image == idx:
-        st.session_state.editing_image = None
-    else:
-        st.session_state.editing_image = idx
-
-def save_edited_image(idx, img):
-    """Save edited image and clear edit mode"""
-    st.session_state.processed_cards[idx]['display_image'] = img
-    st.session_state.editing_image = None
-    st.rerun()
 
 def display_card_info(info, idx):
     """Display extracted information for a single card"""
@@ -176,6 +100,80 @@ def display_card_info(info, idx):
             cols[2].write(f"**State:** {addr.get('state') or 'Not found'}")
             cols[3].write(f"**Country:** {addr.get('country') or 'Not found'}")
             cols[4].write(f"**Pincode:** {addr.get('pincode') or 'Not found'}")
+
+def toggle_edit_mode(idx):
+    """Toggle edit mode for an image"""
+    if st.session_state.editing_image == idx:
+        st.session_state.editing_image = None
+    else:
+        st.session_state.editing_image = idx
+
+def save_edited_image(idx, img):
+    """Save edited image and clear edit mode"""
+    st.session_state.processed_cards[idx]['display_image'] = img
+    st.session_state.editing_image = None
+    st.rerun()
+
+def clear_all():
+    """Clear all session state and refresh page"""
+    # Clear all session state
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    # Force page refresh
+    st.experimental_rerun()
+
+
+    # Display all processed cards
+    for idx, info in enumerate(st.session_state.processed_cards):
+        display_card_info(info, idx)
+
+    # Clear results button - simplified
+    if st.button("Clear All Results"):
+        clear_all()
+# 3. Initialize session state
+# After page config, initialize all session states
+if 'processed_cards' not in st.session_state:
+    st.session_state.processed_cards = []
+if 'editing_image' not in st.session_state:
+    st.session_state.editing_image = None
+if 'uploaded_files' not in st.session_state:
+    st.session_state.uploaded_files = None
+
+# 4. Password protection
+def check_password():
+    """Returns `True` if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store the password.
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if the password is validated.
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show input for password.
+    st.text_input(
+        "Password", type="password", on_change=password_entered, key="password"
+    )
+    if "password_correct" in st.session_state:
+        st.error("😕 Password incorrect")
+    return False
+
+if not check_password():
+    st.stop()  # Do not continue if check_password is not True.
+
+# 5. Main UI and logic
+# Title and description
+st.title("📇 Business Card Scanner")
+st.markdown("""
+Upload one or multiple business card images to extract contact information automatically.
+Supported formats: PNG, JPG, JPEG
+""")
+
 
 # Handle image editing if active
 if st.session_state.editing_image is not None:
