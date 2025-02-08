@@ -14,6 +14,19 @@ st.set_page_config(
     layout="wide"
 )
 
+def clear_all():
+    """Clear all session state and reset app"""
+    keys_to_clear = [
+        'processed_cards',
+        'editing_image',
+        'uploaded_files',
+        'file_uploader'  # Important: Include file uploader key
+    ]
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
+
 # After page config, initialize all session states
 if 'processed_cards' not in st.session_state:
     st.session_state.processed_cards = []
@@ -274,12 +287,6 @@ if st.session_state.processed_cards:
     # Clear results button
     if st.button("Clear All Results"):
         clear_all()  # This will clear everything and refresh
-
-def clear_all():
-    """Clear all session state and reset app"""
-    for key in st.session_state.keys():
-        del st.session_state[key]
-    st.rerun()
 
 # Add footer
 st.markdown("""
