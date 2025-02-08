@@ -14,6 +14,14 @@ st.set_page_config(
     layout="wide"
 )
 
+# After page config, initialize all session states
+if 'processed_cards' not in st.session_state:
+    st.session_state.processed_cards = []
+if 'editing_image' not in st.session_state:
+    st.session_state.editing_image = None
+if 'uploaded_files' not in st.session_state:
+    st.session_state.uploaded_files = None
+
 def check_password():
     """Returns `True` if the user had the correct password."""
 
@@ -196,7 +204,8 @@ uploaded_files = st.file_uploader(
     "Choose business card image(s)",
     type=['png', 'jpg', 'jpeg'],
     accept_multiple_files=True,
-    help="Upload one or more business card images"
+    help="Upload one or more business card images",
+    key="file_uploader"  # Add key for tracking
 )
 
 if uploaded_files:
@@ -264,9 +273,13 @@ if st.session_state.processed_cards:
 
     # Clear results button
     if st.button("Clear All Results"):
-        st.session_state.processed_cards = []
-        st.session_state.editing_image = None
-        st.rerun()
+        clear_all()  # This will clear everything and refresh
+
+def clear_all():
+    """Clear all session state and reset app"""
+    for key in st.session_state.keys():
+        del st.session_state[key]
+    st.rerun()
 
 # Add footer
 st.markdown("""
