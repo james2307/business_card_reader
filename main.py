@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image
 import pandas as pd
-from vision_parser import extract_card_info
+from utils.vision_parser import extract_card_info
 from streamlit_cropper import st_cropper
 import io
 import json
