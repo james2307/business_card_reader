@@ -75,7 +75,7 @@ def extract_card_info(image):
         # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
         # do not change this unless explicitly requested by the user
         response = client.chat.completions.create(
-            model="openai/gpt-4o",
+            model="openai/gpt-4o-2024-08-06",
             messages=[
                 {
                     "role": "user",
