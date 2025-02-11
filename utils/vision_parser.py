@@ -7,6 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 from openai import OpenAI
 
+
 # Initialize OpenAI client
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
