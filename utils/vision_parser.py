@@ -8,7 +8,10 @@ from botocore.exceptions import ClientError
 from openai import OpenAI
 
 # Initialize OpenAI client
-client = OpenAI()
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.environ.get('OPENAI_API_KEY')
+)
 
 # Initialize S3 client
 s3_client = boto3.client(
