@@ -135,8 +135,15 @@ def extract_card_info(image):
         )
 
         # Parse the response
-        result = json.loads(response.choices[0].message.content)
-        return result
+        parsed = json.loads(response.choices[0].message.content)
+        
+        # Handle both array and object responses
+        if isinstance(parsed, list) and len(parsed) > 0:
+            # If it's an array, return the first object
+            return parsed[0]
+        else:
+            # If it's already an object, return it directly
+            return parsed
 
     except Exception as e:
         raise Exception(f"Failed to analyze image with GPT-4o: {str(e)}")
